@@ -6,7 +6,7 @@ import os
 #colours
 white = (255, 255, 255)
 black = (0, 0, 0)
-
+pygame.init()
 #pygame window stuff
 screen_height = 500
 screen_width = 500
@@ -56,20 +56,25 @@ def func2():
 
 playlist = []
 
-def addSong ():
+def add_delete_song (song_name, action):
     print("\n\nList of songs: ")
-    directory = os.getcwd() + '/Music Player/'
+    directory = os.getcwd() + '/'#Music Player/'
     for file in os.listdir(directory):
         if (file.endswith(".wav")):
             print("- " + file.split(".")[0])
-
-    song = input("\nEnter the song name you would like to add to the playlist: ")
-    song = song + ".wav"
-    
+    print(directory)
+    #song = input("\nEnter the song name you would like to add to the playlist: ")
+    #song = song + ".wav"
+    song = song_name + ".wav"
     if (os.path.exists(directory + song)):
-        playlist.append(song)
-        print("\nCurrent playlist: ")
-        print(playlist)
+        if action == 0:
+            playlist.append(song)
+            print("\nCurrent playlist: ")
+            print(playlist)
+        else:
+            playlist.remove(song)
+            print("\nCurrent playlist: ")
+            print(playlist)            
     else:
         print("Song does not exist!")
 
@@ -91,26 +96,51 @@ if __name__ == '__main__':
     song = ''
     
     song_input = pygame.Rect(200, 100, bx, by)
-    add_song_box = pygame.Rect(100, 100, bx, by)
+    #add_song_box = pygame.Rect(100, 100, bx, by)
 
     button1 = button(black, 300, 300, 100, 50, "add", func1)
     button2 = button(black, 400, 300, 100, 50, "delete", func2)
+    button3 = button(black, 400, 350, 100, 50, "play", func2)
+    button4 = button(black, 250, 350, 100, 50, "pause", func2)
     button_list = [button1, button2]
     running = True
+    
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                    clicked = True
-                    if (button1.rect.collidepoint(event.pos)): 
+                    if (button1.rect.collidepoint(event.pos)): # add song
+                        clicked = True
+                        add_delete_song(song, 0)
+                        song = ''
+                        color = black
+                    else:
+                        clicked = False
+                    
+                    if (button2.rect.collidepoint(event.pos)): # delete song
+                        clicked = True
+                        add_delete_song(song, 1)
+                        song = ''
+                        color = black
+                    else:
+                        clicked = False
+
+                    if (song_input.collidepoint(event.pos)): # input box
                         type_active = True
                     else:
                         type_active = False
+                    
+                    if (button3.rect.collidepoint(event.pos)):
+                        pygame.mixer.music.load(playlist[0])
+                        playlist.pop(0)
+                        pygame.mixer.music.play()
+            
             if event.type == pygame.KEYDOWN:
-                if type_active:
-                    if event.key == pygame.K_RETURN:
-                        print(song)
+                if type_active: #song input
+                    if event.key == pygame.K_RETURN: 
+                        #print(song)
+                        add_delete_song(song, 0)
                         song = ''
                         color = black
                     elif event.key == pygame.K_BACKSPACE:
@@ -122,11 +152,17 @@ if __name__ == '__main__':
                 clicked = False
                 if song_input.collidepoint(event.pos):
                     add_song_active = False
+        
         screen.fill(white)
         color = (144, 144, 144) if type_active else black
         song_input_color = (144, 144, 144) if add_song_active else song_input_color
         pygame.draw.rect(screen, color, song_input, 2)
+        
         button1.draw_button()
+        button2.draw_button()
+        button3.draw_button()
+        button4.draw_button()
+        
         pygame.display.update()
 
 '''
