@@ -6,16 +6,22 @@ import os
 #colours
 white = (255, 255, 255)
 black = (0, 0, 0)
-pygame.init()
+color = black
+song_input_color = (122, 11, 34)
+
 #pygame window stuff
+pygame.init()
+pygame.font.init()
 screen_height = 500
 screen_width = 500
 screen = pygame.display.set_mode((screen_height, screen_width))
 screen.fill(white)
-pygame.font.init()
-my_font = pygame.font.SysFont('Comic Sans MS', 30)
+my_font = pygame.font.SysFont('Arial MT', 30)
 
-clicked = False
+#global variables
+playlist = [] # global playlist
+text = "" # text to display
+clicked = False # if a button was pressed
 
 class button():
     def __init__(self, color, x, y, w, h, text, func = None):
@@ -37,12 +43,14 @@ class button():
             clicked = not clicked
         color = (144, 144, 144)
         if clicked:
-            color = (144, 20, 55)
+            color = (144, 144, 144)
         elif hover:
             color = (100, 100, 100)
         pygame.draw.rect(screen, color, button_rect)
-        text_surface = my_font.render(self.text, False, (0, 0, 0))
-        screen.blit(text_surface, (self.x + self.w/3,self.y + self.h/3))
+        text_surface = my_font.render(self.text, True, (0, 0, 0))
+        text_rect = text_surface.get_rect(center=(self.w/2 + self.x, self.h/2 + self.y))
+        screen.blit(text_surface, text_rect)
+        #screen.blit(text_surface, (self.x + self.w/3,self.y + self.h/3))
 
     def call_back (self, *args):
         if self.func:
@@ -54,33 +62,29 @@ def func1():
 def func2():
     print("2")
 
-playlist = []
-
 def add_delete_song (song_name, action):
+    global text
     print("\n\nList of songs: ")
-    directory = os.getcwd() + '/'#Music Player/'
-    for file in os.listdir(directory):
+    directory = os.getcwd() + '/'
+    for file in os.listdir(directory): # print list of songs
         if (file.endswith(".wav")):
             print("- " + file.split(".")[0])
-    print(directory)
-    #song = input("\nEnter the song name you would like to add to the playlist: ")
-    #song = song + ".wav"
+    
     song = song_name + ".wav"
     if (os.path.exists(directory + song)):
         if action == 0:
             playlist.append(song)
             print("\nCurrent playlist: ")
             print(playlist)
+            text = "Added song " + song_name + " to the playlist."
         else:
             playlist.remove(song)
             print("\nCurrent playlist: ")
-            print(playlist)            
+            print(playlist)
+            text = "Removed song" + song_name + " from the playlist"         
     else:
         print("Song does not exist!")
-
-#colours
-color = black
-song_input_color = (122, 11, 34)
+        text = "Song does not exist!"
 
 if __name__ == '__main__':
     
@@ -91,34 +95,37 @@ if __name__ == '__main__':
     bx = 100
     
     #buttons https://stackoverflow.com/questions/63435298/how-to-create-a-button-class-in-pygame
-    add_song_active = False
-    type_active = False
+    #add_song_active = False
+    type_active = False # used for active user input
     song = ''
     
     song_input = pygame.Rect(200, 100, bx, by)
     #add_song_box = pygame.Rect(100, 100, bx, by)
 
-    button1 = button(black, 300, 300, 100, 50, "add", func1)
-    button2 = button(black, 400, 300, 100, 50, "delete", func2)
-    button3 = button(black, 400, 350, 100, 50, "play", func2)
-    button4 = button(black, 250, 350, 100, 50, "pause", func2)
-    button_list = [button1, button2]
+    add_button = button(black, 100, 100, 100, 50, "Add", func1)
+    delete_song = button(black, 100, 160, 100, 50, "Delete", func2)
+    play_song = button(black, 100, 220, 100, 50, "Play", func2)
+    pause_song = button(black, 100, 280, 100, 50, "Pause", func2)
+    unpause_song = button(black, 100, 340, 100, 50, "Unpause", func2)
+    
     running = True
+    pause = 1
     
     while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                    if (button1.rect.collidepoint(event.pos)): # add song
+                    if (add_button.rect.collidepoint(event.pos)): # add song
                         clicked = True
                         add_delete_song(song, 0)
                         song = ''
                         color = black
+                        add_button.color = (12, 12, 14)
                     else:
                         clicked = False
                     
-                    if (button2.rect.collidepoint(event.pos)): # delete song
+                    if (delete_song.rect.collidepoint(event.pos)): # delete song
                         clicked = True
                         add_delete_song(song, 1)
                         song = ''
@@ -131,10 +138,19 @@ if __name__ == '__main__':
                     else:
                         type_active = False
                     
-                    if (button3.rect.collidepoint(event.pos)):
-                        pygame.mixer.music.load(playlist[0])
-                        playlist.pop(0)
-                        pygame.mixer.music.play()
+                    if (play_song.rect.collidepoint(event.pos)):
+                        if len(playlist) > 0:
+                            pygame.mixer.music.load(playlist[0])
+                            playlist.pop(0)
+                            pygame.mixer.music.play()
+
+                    if (pause_song.rect.collidepoint(event.pos)):
+                        pygame.mixer.pause()
+                        pause = 0
+                    
+                    if (unpause_song.rect.collidepoint(event.pos)):
+                        pygame.mixer.unpause()
+                        pause = 1
             
             if event.type == pygame.KEYDOWN:
                 if type_active: #song input
@@ -147,21 +163,21 @@ if __name__ == '__main__':
                         song = song[:-1]
                     else:
                         song += event.unicode
-
-            if event.type == pygame.MOUSEBUTTONUP:
-                clicked = False
-                if song_input.collidepoint(event.pos):
-                    add_song_active = False
         
         screen.fill(white)
         color = (144, 144, 144) if type_active else black
-        song_input_color = (144, 144, 144) if add_song_active else song_input_color
+        #song_input_color = (144, 144, 144) if add_song_active else song_input_color
         pygame.draw.rect(screen, color, song_input, 2)
         
-        button1.draw_button()
-        button2.draw_button()
-        button3.draw_button()
-        button4.draw_button()
+        add_button.draw_button()
+        delete_song.draw_button()
+        play_song.draw_button()
+        pause_song.draw_button()
+        unpause_song.draw_button()
+        my_font = pygame.font.SysFont('Comic Sans MS', 30)
+        text_surface = my_font.render(text, False, (0, 0, 0))
+        #print(text)
+        screen.blit(text_surface, (0,0))
         
         pygame.display.update()
 
